@@ -78,14 +78,13 @@ if sys.version_info.major == 3:
     def safe_hexlify(a):
         return str(binascii.hexlify(a), 'utf-8')
 
-    def padding(pad_size:int, base:int) -> bytes:
-        if not pad_size: return b''
+    def encode(val:int, base:int, minlen:int = 0) -> Union[bytes, str]:        
         code_string = get_code_string(base)
-        pad_element = bytes([ord(code_string[0])])
-        return pad_element * pad_size
-
-    def encode(val:int, base:int, minlen:int = 0) -> Union[bytes, str]:
-        code_string = get_code_string(base)
+        def padding(pad_size:int, base:int) -> bytes:
+            if not pad_size: return b''
+            pad_element = bytes([ord(code_string[0])])
+            return pad_element * pad_size
+        
         result_bytes = bytes()
         while val:
             curcode = code_string[val % base]
