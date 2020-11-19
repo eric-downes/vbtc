@@ -1,7 +1,7 @@
 import sys, os
 import binascii
 import hashlib
-
+from typing import *
 
 if sys.version_info.major == 3:
     string_types = (str)
@@ -14,6 +14,7 @@ if sys.version_info.major == 3:
         16: '0123456789abcdef',
         32: 'abcdefghijklmnopqrstuvwxyz234567',
         58: '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz',
+        64: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/',
         256: ''.join([chr(x) for x in range(256)])
     }
 
@@ -77,26 +78,22 @@ if sys.version_info.major == 3:
     def safe_hexlify(a):
         return str(binascii.hexlify(a), 'utf-8')
 
-    def encode(val, base, minlen=0):
-        base, minlen = int(base), int(minlen)
+    def padding(pad_size:int, base:int) -> bytes:
+        if not pad_size: return b''
+        code_string = get_code_string(base)
+        pad_element = bytes([ord(code_string[0])])
+        return pad_element * pad_size
+
+    def encode(val:int, base:int, minlen:int = 0) -> Union[bytes, str]:
         code_string = get_code_string(base)
         result_bytes = bytes()
-        while val > 0:
+        while val:
             curcode = code_string[val % base]
             result_bytes = bytes([ord(curcode)]) + result_bytes
             val //= base
-
-        pad_size = minlen - len(result_bytes)
-
-        padding_element = b'\x00' if base == 256 else b'1' \
-            if base == 58 else b'0'
-        if (pad_size > 0):
-            result_bytes = padding_element*pad_size + result_bytes
-
-        result_string = ''.join([chr(y) for y in result_bytes])
-        result = result_bytes if base == 256 else result_string
-
-        return result
+        pad_size = max(0, minlen - len(result_bytes))
+        result_bytes = padding(pad_size, base) + result_bytes
+        return result_bytes if base == 256 else ''.join([chr(y) for y in result_bytes])
 
     def decode(string, base):
         if base == 256 and isinstance(string, str):
